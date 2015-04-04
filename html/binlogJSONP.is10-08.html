@@ -1,0 +1,54 @@
+<html>
+<meta http-equiv="content-type" content="text/html;charset=UTF-8"/>
+
+<div ng-app>
+		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js"></script>
+		<script>
+dxController = function ($scope, $http) {
+  $scope.selectedCode = null;
+	$scope.selectedBegin = null;
+	$scope.selectedEnd = null;
+	
+    $scope.codes = [];
+	$scope.tstamps = [];
+
+  //$http.jsonp("http://54.208.78.75:8000/sql2json?JSON_CALLBACK()select code, name, nserv from svod_code where type = 'd' order by code")
+  $http.jsonp("/sql2json/JSON_CALLBACK/select code, name, nserv from svod_code where type = 'd' order by code")
+	.success(function (data) {
+		$scope.codes = data[1];
+		$scope.selectedCode = data[1][0] ? data[1][0] : null;
+		if ($scope.selectedCode)
+			$scope.onSelectCode();
+	});
+	
+	$scope.onSelectCode = function() {
+		//$http.jsonp("http://54.208.78.75:8000/sql2json?JSON_CALLBACK()select tstamp from dx where code = '" + $scope.selectedCode.code + "' order by tstamp")
+    $http.jsonp("/sql2json/JSON_CALLBACK/select tstamp from dx where code = '" + $scope.selectedCode.code + "' order by tstamp")
+		.success(function (data) {
+			result = [];
+			angular.forEach(data[1], function(item, index) {
+				result.push({ 
+					tstamp: item.tstamp,
+					name: item.tstamp.replace(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/, "$1-$2-$3 $4:$5")
+				});
+			});
+			$scope.tstamps = result;
+			$scope.selectedBegin = result[0] ? result[0] : null;
+			$scope.selectedEnd = result[0] ? result[0] : null;
+		});
+	}
+}		
+		</script>
+		<form method="POST" action="http://54.88.19.150:8080/xmlpserver/servlet/xdo" target="_blank" ng-controller="dxController" >
+			<table>
+			<tr><td>Код сигнала:</td><td><select style="width:300px;" name="pCode" id="codeSelect" ng-model="selectedCode" ng-change="onSelectCode()" ng-options="code.code + ' : ' + code.name + ' : ' + code.nserv for code in codes track by code.code" ></select></td></tr>
+			<tr><td>Начало:</td><td><select style="width:300px;" name="pBegin" id="beginSelect" ng-model="selectedBegin" ng-options="tstamp.name for tstamp in tstamps track by tstamp.tstamp" ></select></td></tr>
+			<tr><td>Окончание:</td><td><select style="width:300px;" name="pEnd" id="endSelect" ng-model="selectedEnd" ng-options="tstamp.name for tstamp in tstamps track by tstamp.tstamp" ></select></td></tr>
+			<tr><td>Формат:</td><td><select style="width:300px;" name="_xf" id="formatSelect" ><option value="html">HTML</option><option value="pdf" selected="">PDF</option><option value="rtf">RTF</option><option value="excel">Excel</option><option value="excel2000">Excel 2000</option><option value="ppt">PowerPoint</option><option value="mhtml">MHTML</option><option value="csv">CSV</option><option value="xml">XML</option></select></td></tr>
+			</table>
+			<input type="hidden" name="_xdo" value="/~XMLP_GUEST/~is10-08/Project1/dx_report_form/dx_report_form.xdo" />
+			<input type="hidden" name="_xt" value="dx_template" />
+			<input type="hidden" name="_xmode" value="4" />
+			<input type="submit" />
+		</form>
+</html>

@@ -1,0 +1,152 @@
+<HTML>
+<meta http-equiv="content-type" content="text/html;charset=UTF-8"/>
+
+<style type="text/css">
+   select {font-size: 18px;}
+   table {font-size: 22px; background: white;}
+   input[type=submit] {font-size: 22px;}
+</style>
+sql2json=<input type="text" id="sql2json" size="60" value="http://awsedunet.sytes.net:8000/sql2json/" >
+<form 
+  target="_blank" 
+  method="POST"
+  name="params"
+  action="http://awsedunet.sytes.net:8080/xmlpserver/servlet/xdo"
+  onsubmit="return(go());" >
+  
+  <input type="hidden" name="_xuil" value="ru" >
+  <input type="hidden" name="_xmode" value="4" >
+  <input type="hidden" name="_xpf" value="" >
+  <input type="hidden" name="_xpt" value="0" >
+  
+  <input type="hidden" name="_xdo" value="/~XMLP_GUEST/~is10-99/binlogW/binlogW.xdo" >
+  
+  <input type="hidden" name="pCodeName">
+  <input type="hidden" name="pStartName">
+  <input type="hidden" name="pStopName">
+  
+<table>
+
+<tr>
+  <td onclick="getCode()" style="cursor: pointer;"><u>Получить код дискретного сигнала</u></td>
+  <td><select name="pCode" style="width: 100%;" onchange="onvalue()"></select></td>
+  <td rowspan="5"><img id="preloader" style="display:none;" src="" border="0"></td>
+</tr>
+<tr>
+  <td onclick="getStamps()" style="cursor: pointer;"><u>Получить период</u></td>
+  <td>
+  с <select name="pStart" style="width: 7cm;"></select>
+  по <select name="pStop" style="width: 7cm;"></select>
+  </td>
+</tr>
+<tr>
+  <td>Шаблон разметки</td>
+  <td>
+    <select name="_xt">
+      <option value="New Template 2">New Template 2</option>
+      <option value="dx">dx</option>
+      <option value="dx21">dx21</option>
+      <option value="dx3">dx3</option>
+    </select>
+  </td>
+</tr>
+<tr>
+  <td>Формат вывода</td>
+  <td>
+    <select name="_xf">
+      <option value="html">HTML</option>
+      <option value="pdf">PDF</option>
+      <option value="rtf">RTF</option>
+      <option value="excel">Excel</option>
+      <option value="excel2000">Excel2000</option>
+      <option value="xml">Данные</option>
+    </select>
+  </td>
+</tr>
+<tr>
+  <td colspan="2"><input type="submit" value="Получите отчет!" style="width:100%;" /></td>
+</tr>
+</table>
+
+</form>
+
+<script type="text/javascript">
+var params= document.forms["params"];
+var preloader= document.getElementById("preloader");
+function sql2json(){
+  return document.getElementById("sql2json").value;
+};
+function go(){
+  if(params.pCode.selectedIndex<0){
+    alert("Не выбран код дискретного сигнала!");
+    return false;
+  }
+
+  if(params.pStart.selectedIndex+params.pStop.selectedIndex<0 ){
+    alert("Не выбран период!");
+    return false;
+  }
+
+  params.pCodeName.value= params.pCode.options[params.pCode.selectedIndex].text;
+  params.pStartName.value= params.pStart.options[params.pStart.selectedIndex].text;
+  params.pStopName.value = params.pStop.options[params.pStop.selectedIndex].text;
+  return true;
+}
+
+function onvalue(){
+  params.pStart.length= 0; params.pStop.length= 0;  
+}
+
+function getCode(){
+  /* Организация JSONP-запроса */
+  //debugger;
+  params.pCode.length= 0;
+  onvalue();
+  preloader.src= "";
+  var script = document.createElement("script");
+  script.src = sql2json() + "callbackCode/"+ encodeURIComponent("select code, name, nserv from svod_code where type='d' order by 1");
+  script.type = 'text/javascript';
+  document.body.appendChild(script);
+  //debugger;
+  preloader.src= "http://edunet.wdfiles.com/local--files/begin2014/Preloader_9.gif";                  
+  preloader.style.display= "block";
+}
+
+function callbackCode(oRS){
+  params.pCode.length= 0;
+  for (x1 in oRS[1]){
+    params.pCode[x1] = 
+      new Option(oRS[1][x1].code +' : ' +oRS[1][x1].name +' : ' +oRS[1][x1].nserv,  oRS[1][x1].code);
+  }
+  preloader.style.display= "none";
+}
+
+function getStamps(){
+  /* Организация JSONP-запроса */
+  preloader.src= "";
+  var script = document.createElement("script");
+  script.src = sql2json()+ "callbackStamp/"+ encodeURIComponent("select tstamp from dx where code='"+params.pCode.value+"' order by 1");
+  script.type = 'text/javascript';
+  document.body.appendChild(script);
+  //debugger;
+  preloader.src= "http://edunet.wdfiles.com/local--files/begin2014/Preloader_10.gif";
+  preloader.style.display= "block";
+}
+
+function callbackStamp(oRS){
+  function timestr(stamp){
+    return stamp.substring(6,8)+ '-'+ stamp.substring(4,6)+ '-'+ stamp.substring(0,4)+ ' '+ stamp.substring(8,10)+ ':'+ stamp.substring(10,12);
+  }
+  params.pStart.length= 0; params.pStartName.value= "";
+  params.pStop.length= 0; params.pStopName.value= "";
+  for (x1 in oRS[1]){
+    params.pStart[x1] = new Option(timestr(oRS[1][x1].tstamp), oRS[1][x1].tstamp);
+    params.pStop[x1] = new Option(timestr(oRS[1][x1].tstamp), oRS[1][x1].tstamp);
+  }
+  //debugger;
+  params.pStop.selectedIndex= params.pStop.length-1;
+  preloader.style.display= "none";
+}
+</script>
+
+</HTML>
